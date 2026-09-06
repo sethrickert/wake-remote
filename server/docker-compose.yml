@@ -1,0 +1,21 @@
+services:
+  wake-remote:
+    build: .
+    image: ghcr.io/sethrickert/wake-remote-server:latest
+    restart: unless-stopped
+    environment:
+      WAKE_SERVER_URL: ${WAKE_SERVER_URL:-http://localhost:8080}
+      WAKE_ALLOW_INSECURE_ENROLLMENT: ${WAKE_ALLOW_INSECURE_ENROLLMENT:-true}
+      WAKE_TARGETS_JSON: ${WAKE_TARGETS_JSON:-}
+    volumes:
+      - wake-data:/data
+    ports:
+      - "${WAKE_LISTEN_ADDRESS:-127.0.0.1}:8080:8080"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    user: "10001:10001"
+    pids_limit: 100
+volumes:
+  wake-data:

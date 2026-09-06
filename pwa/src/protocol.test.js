@@ -1,0 +1,2 @@
+import {describe,expect,it} from 'vitest';import vector from '../../shared/test-vectors.json';import {importKey,signRequest} from './protocol';
+describe('protocol fixture',()=>it('matches the reference signature',async()=>{const v=vector.vectors[0],key=await importKey(v.key_hex),r=await signRequest(key,v.body.includes('main-pc')?'main-pc':'',v.timestamp,new Uint8Array(v.nonce.match(/../g).map(x=>parseInt(x,16))));expect(r.body).toBe(v.body);expect(r.canonical).toBe(v.canonical);expect(r.headers['X-Signature']).toBe(v.signature)}));

@@ -1,0 +1,2 @@
+main { width: min(calc(100% - 40px), 480px); }
+@media (min-width: 800px) { main { width: min(calc(100% - 64px), 680px); } }

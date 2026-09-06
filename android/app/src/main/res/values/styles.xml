@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WakeRemoteBaseTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/apex_black</item>
+        <item name="android:navigationBarColor">@color/apex_black</item>
+        <item name="android:windowBackground">@color/apex_background</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:colorAccent">@color/apex_blue</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.WakeRemote" parent="@style/WakeRemoteBaseTheme" />
+</resources>

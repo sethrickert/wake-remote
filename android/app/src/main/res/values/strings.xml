@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WakeRemote</string>
+    <string name="apex_logo_description">Apex Wake-on-LAN logo</string>
+    <string name="open_secure_setup">Open secure key setup</string>
+    <string name="wake_computer">WAKE MAIN PC</string>
+    <string name="wake_computer_description">Send a secure wake signal to the main PC</string>
+    <string name="setup_button">SETUP  ⚙</string>
+    <string name="sending">SENDING…</string>
+    <string name="setup_secure_key">SET UP SECURE KEY</string>
+    <string name="try_again_in">TRY AGAIN IN %1$ds</string>
+    <string name="key_installed">Secure key installed. WakeRemote is ready.</string>
+    <string name="key_protection_failed">Android could not protect the key on this device.</string>
+    <string name="key_removed">The secure key was removed.</string>
+    <string name="key_removal_failed">The secure key could not be removed.</string>
+    <string name="key_status_unavailable">Secure key status is unavailable.</string>
+</resources>
