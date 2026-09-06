@@ -27,11 +27,12 @@ jobs:
         working-directory: pwa
       - run: Compress-Archive pwa/dist/* WakeRemote-PWA.zip
       - uses: softprops/action-gh-release@v2
-        with: {files: |
+        with:
+          files: |
             android/app/build/outputs/apk/release/*.apk
             windows/WakeRemote/bin/Release/net8.0-windows/win-x64/publish/WakeRemote.exe
             windows/artifacts/*.exe
-            WakeRemote-PWA.zip}
+            WakeRemote-PWA.zip
   server-image:
     runs-on: ubuntu-latest
     steps:
