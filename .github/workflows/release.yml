@@ -13,7 +13,9 @@ jobs:
       - uses: android-actions/setup-android@v3
       - name: Decode Android signing key
         shell: bash
-        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/release.jks
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "ANDROID_KEYSTORE_BASE64 is not configured" >&2; exit 1; }
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.jks
         env: {ANDROID_KEYSTORE_BASE64: '${{ secrets.ANDROID_KEYSTORE_BASE64 }}'}
       - run: android/gradlew.bat -p android assembleRelease
         env: {WAKE_STORE_FILE: release.jks, WAKE_STORE_PASSWORD: '${{ secrets.ANDROID_STORE_PASSWORD }}', WAKE_KEY_ALIAS: '${{ secrets.ANDROID_KEY_ALIAS }}', WAKE_KEY_PASSWORD: '${{ secrets.ANDROID_KEY_PASSWORD }}'}
@@ -23,7 +25,7 @@ jobs:
       - run: iscc windows/installer.iss
       - uses: actions/setup-node@v4
         with: {node-version: 22}
-      - run: npm install && npm run build
+      - run: npm ci && npm run build
         working-directory: pwa
       - run: Compress-Archive pwa/dist/* WakeRemote-PWA.zip
       - uses: softprops/action-gh-release@v2
