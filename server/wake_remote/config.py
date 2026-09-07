@@ -35,6 +35,8 @@ class Settings:
     notify_ntfy_url: str
     notify_auth_failures: bool
     allowed_origins: tuple[str, ...]
+    notify_template: str = "Wake Remote: {event} ({target})"
+    notify_telegram_parse_mode: str = ""
 
 
 def _write_private(path: Path, value: str) -> None:
@@ -92,4 +94,6 @@ def load_settings() -> tuple[Settings, bool]:
         notify_ntfy_url=os.environ.get("WAKE_NOTIFY_NTFY_URL", ""),
         notify_auth_failures=os.environ.get("WAKE_NOTIFY_AUTH_FAILURES", "false").lower() == "true",
         allowed_origins=tuple(x.strip() for x in os.environ.get("WAKE_ALLOWED_ORIGINS", "*").split(",") if x.strip()),
+        notify_template=os.environ.get("WAKE_NOTIFY_TEMPLATE", "Wake Remote: {event} ({target})"),
+        notify_telegram_parse_mode=os.environ.get("WAKE_NOTIFY_TELEGRAM_PARSE_MODE", ""),
     ), generated
