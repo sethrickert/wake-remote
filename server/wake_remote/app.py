@@ -5,7 +5,6 @@ import hashlib
 import hmac
 import json
 import logging
-import secrets
 import socket
 import sys
 import threading
@@ -16,6 +15,7 @@ from collections import defaultdict, deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .config import Settings, Target, load_settings
+from .tokens import TokenStore, enrollment_uri
 
 LOG = logging.getLogger("wake-remote")
 
@@ -46,20 +46,14 @@ class WakeService:
         self.authenticated = FixedWindowLimiter(5, 60)
         self.unauthenticated = FixedWindowLimiter(30, 60)
         self.enrollment = FixedWindowLimiter(10, 60)
-        self.tokens: dict[str, float] = {}
-        self.token_lock = threading.Lock()
+        self.tokens = TokenStore(settings.data_dir / "enroll-tokens.json")
 
     def mint_token(self, ttl: int = 600) -> tuple[str, str]:
-        token = secrets.token_urlsafe(32)
-        with self.token_lock:
-            self.tokens[token] = time.time() + ttl
-        payload = "wakeremote://enroll?" + urllib.parse.urlencode({"v": "1", "url": self.settings.server_url, "t": token})
-        return token, payload
+        token = self.tokens.mint(ttl)
+        return token, enrollment_uri(self.settings.server_url, token)
 
     def consume_token(self, token: str) -> bool:
-        with self.token_lock:
-            expires = self.tokens.pop(token, None)
-        return expires is not None and expires >= time.time()
+        return self.tokens.consume(token)
 
     def verify(self, headers, body: bytes) -> tuple[bool, str]:
         key_id = headers.get("X-Key-Id", "")
@@ -75,7 +69,7 @@ class WakeService:
             return False, key_id
         canonical = "\n".join(("POST", "/v1/wake", timestamp, nonce, hashlib.sha256(body).hexdigest()))
         expected = hmac.new(self.settings.secret, canonical.encode(), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected, signature):
+        if not hmac.compare_digest(expected, signature.lower()):
             return False, key_id
         now = time.time()
         with self.nonce_lock:
