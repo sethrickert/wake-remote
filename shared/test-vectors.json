@@ -6,10 +6,11 @@
     "timestamp": 1757030400,
     "nonce": "00112233445566778899aabbccddeeff",
     "method": "POST",
-    "path": "/v1/wake",
+    "path": "/api/v1/wake",
+    "target": "main-pc",
     "body": "{\"target\":\"main-pc\"}",
     "body_sha256": "2bb5e54274cbaba5aa0ae69ed8c4037278376287fa363b096fbc4662774bcb34",
-    "canonical": "POST\n/v1/wake\n1757030400\n00112233445566778899aabbccddeeff\n2bb5e54274cbaba5aa0ae69ed8c4037278376287fa363b096fbc4662774bcb34",
-    "signature": "e40a07dab22ebff23eeaa158aa9f861918ba70007c7b85ba6acf5aac48823a38"
+    "canonical": "POST\n/api/v1/wake\n1757030400\n00112233445566778899aabbccddeeff\n2bb5e54274cbaba5aa0ae69ed8c4037278376287fa363b096fbc4662774bcb34",
+    "signature": "c405135fa02318b38bc69785fc507755ac9cb137cfe3f440f96456a19134288f"
   }]
 }

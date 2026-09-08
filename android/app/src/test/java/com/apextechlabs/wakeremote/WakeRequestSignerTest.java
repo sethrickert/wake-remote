@@ -2,28 +2,64 @@ package com.apextechlabs.wakeremote;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.crypto.spec.SecretKeySpec;
 
 public final class WakeRequestSignerTest {
+    /**
+     * Reads the authoritative fixture rather than transcribing it. Transcribed copies
+     * silently drift from shared/test-vectors.json, which is exactly what this test exists
+     * to prevent.
+     */
+    private static String vector(String field) throws Exception {
+        File file = new File("../../shared/test-vectors.json").getCanonicalFile();
+        for (File dir = new File(".").getCanonicalFile(); !file.exists() && dir != null; dir = dir.getParentFile()) {
+            file = new File(dir, "shared/test-vectors.json");
+        }
+        assertNotNull("shared/test-vectors.json not found", file);
+        String json = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+        Matcher matcher = Pattern.compile("\"" + field + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(json);
+        if (!matcher.find()) throw new IllegalStateException("missing fixture field: " + field);
+        return matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+    }
+
     @Test
     public void requestMatchesServerContract() throws Exception {
-        byte[] key = WakeKeyStore.decodeKey("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
-        byte[] nonce = new byte[] {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,(byte)0x88,(byte)0x99,(byte)0xaa,(byte)0xbb,(byte)0xcc,(byte)0xdd,(byte)0xee,(byte)0xff};
+        byte[] key = WakeKeyStore.decodeKey(vector("key_hex"));
+        String nonceHex = vector("nonce");
+        byte[] nonce = new byte[nonceHex.length() / 2];
+        for (int i = 0; i < nonce.length; i++) {
+            nonce[i] = (byte) Integer.parseInt(nonceHex.substring(i * 2, i * 2 + 2), 16);
+        }
+
         WakeRequestSigner.SignedRequest request = WakeRequestSigner.create(
-            new SecretKeySpec(key, "HmacSHA256"), "main-pc", 1_757_030_400L, nonce
+            new SecretKeySpec(key, "HmacSHA256"), vector("target"), 1_757_030_400L, nonce
         );
 
-        assertEquals("{\"target\":\"main-pc\"}", new String(request.body, java.nio.charset.StandardCharsets.UTF_8));
+        assertEquals(vector("body"), new String(request.body, StandardCharsets.UTF_8));
         assertEquals("1757030400", request.timestamp);
-        assertEquals("00112233445566778899aabbccddeeff", request.nonce);
-        assertTrue(request.canonical.endsWith("2bb5e54274cbaba5aa0ae69ed8c4037278376287fa363b096fbc4662774bcb34"));
+        assertEquals(nonceHex, request.nonce);
+        // Asserts the whole canonical string, so the signed path itself is covered.
+        assertEquals(vector("canonical"), request.canonical);
         assertEquals(5, request.canonical.split("\\n", -1).length);
         assertFalse(request.canonical.endsWith("\n"));
-        assertEquals("e40a07dab22ebff23eeaa158aa9f861918ba70007c7b85ba6acf5aac48823a38", request.signature);
+        assertEquals(vector("signature"), request.signature);
+    }
+
+    @Test
+    public void signedPathIsTheApiPath() throws Exception {
+        assertEquals(vector("path"), WakeRequestSigner.PATH);
+        assertEquals("/api/v1/wake", WakeRequestSigner.PATH);
     }
 
     @Test

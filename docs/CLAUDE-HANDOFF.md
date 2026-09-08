@@ -15,7 +15,7 @@ Reproduce every build from `main`, install the native clients, deploy a fresh se
 
 ## Protocol invariants
 
-The compact UTF-8 body is `{"target":"<alias>"}`. Join `POST`, `/v1/wake`, Unix timestamp seconds, fresh lowercase nonce hex, and lowercase SHA-256 body hex with LF characters and no trailing LF. Compute lowercase HMAC-SHA256 hex using the raw 32-byte key represented by the 64-character enrollment value. Preserve `X-Key-Id`, `X-Timestamp`, `X-Nonce`, and `X-Signature` exactly.
+The compact UTF-8 body is `{"target":"<alias>"}`. Join `POST`, `/api/v1/wake`, Unix timestamp seconds, fresh lowercase nonce hex, and lowercase SHA-256 body hex with LF characters and no trailing LF. Compute lowercase HMAC-SHA256 hex using the raw 32-byte key represented by the 64-character enrollment value. Preserve `X-Key-Id`, `X-Timestamp`, `X-Nonce`, and `X-Signature` exactly.
 
 Authenticate before applying the legitimate-key limiter. Nonces are single-use; never retry an already signed request. Clients reference aliases only. MAC addresses and destinations remain server-defined.
 
@@ -165,6 +165,6 @@ Create `v3.0.0` only after live acceptance passes. Watch `.github/workflows/rele
 - Android: unit tests, lint, debug and minified release builds passed; debug APK installed and cold-launched on `Pixel_2_API_30` without a crash.
 - Windows: protocol-fixture test passed; self-contained publish and Inno Setup compilation succeeded.
 - PWA: fixture test, ESLint, production build, service worker, desktop rendering, enrollment navigation, and 390×844 responsive rendering passed without console errors.
-- Fixture signature: `e40a07dab22ebff23eeaa158aa9f861918ba70007c7b85ba6acf5aac48823a38`.
+- Fixture signature: `c405135fa02318b38bc69785fc507755ac9cb137cfe3f440f96456a19134288f`.
 
 Environment-dependent checks still requiring evidence: production Android signing, pushed multi-architecture image, real TLS deployment, configured notification destinations, camera hardware, cellular network, Windows tray/hotkey on the recipient machine, and a genuinely sleeping target.

@@ -1,2 +1,21 @@
-import {describe,expect,it} from 'vitest';import vector from '../../shared/test-vectors.json';import {importKey,signRequest} from './protocol';
-describe('protocol fixture',()=>it('matches the reference signature',async()=>{const v=vector.vectors[0],key=await importKey(v.key_hex),r=await signRequest(key,v.body.includes('main-pc')?'main-pc':'',v.timestamp,new Uint8Array(v.nonce.match(/../g).map(x=>parseInt(x,16))));expect(r.body).toBe(v.body);expect(r.canonical).toBe(v.canonical);expect(r.headers['X-Signature']).toBe(v.signature)}));
+import {describe, expect, it} from 'vitest';
+import fixture from '../../shared/test-vectors.json';
+import {WAKE_PATH, importKey, signRequest} from './protocol';
+
+const v = fixture.vectors[0];
+const bytes = hex => new Uint8Array(hex.match(/../g).map(x => parseInt(x, 16)));
+
+describe('protocol fixture', () => {
+  it('matches the reference signature', async () => {
+    const key = await importKey(v.key_hex);
+    const r = await signRequest(key, v.target, v.timestamp, bytes(v.nonce));
+    expect(r.body).toBe(v.body);
+    expect(r.canonical).toBe(v.canonical);
+    expect(r.headers['X-Signature']).toBe(v.signature);
+  });
+
+  it('signs the /api path', () => {
+    expect(WAKE_PATH).toBe(v.path);
+    expect(WAKE_PATH).toBe('/api/v1/wake');
+  });
+});

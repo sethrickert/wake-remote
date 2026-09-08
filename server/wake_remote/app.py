@@ -19,6 +19,11 @@ from .tokens import TokenStore, enrollment_uri
 
 LOG = logging.getLogger("wake-remote")
 
+API_PREFIX = "/api"
+WAKE_PATH = f"{API_PREFIX}/v1/wake"
+ENROLL_PATH = f"{API_PREFIX}/v1/enroll"
+HEALTH_PATHS = ("/healthz", f"{API_PREFIX}/healthz")
+
 
 class FixedWindowLimiter:
     def __init__(self, count: int, seconds: int):
@@ -67,7 +72,7 @@ class WakeService:
                 return False, key_id
         except ValueError:
             return False, key_id
-        canonical = "\n".join(("POST", "/v1/wake", timestamp, nonce, hashlib.sha256(body).hexdigest()))
+        canonical = "\n".join(("POST", WAKE_PATH, timestamp, nonce, hashlib.sha256(body).hexdigest()))
         expected = hmac.new(self.settings.secret, canonical.encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, signature.lower()):
             return False, key_id
@@ -144,10 +149,10 @@ def make_handler(service: WakeService):
             self.finish_status(204, headers={"Access-Control-Allow-Methods": "POST, GET, HEAD, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, X-Key-Id, X-Timestamp, X-Nonce, X-Signature", "Access-Control-Max-Age": "600"})
 
         def do_HEAD(self):
-            self.finish_status(200 if urllib.parse.urlsplit(self.path).path == "/healthz" else 404, include_body=False)
+            self.finish_status(200 if urllib.parse.urlsplit(self.path).path in HEALTH_PATHS else 404, include_body=False)
 
         def do_GET(self):
-            if urllib.parse.urlsplit(self.path).path == "/healthz":
+            if urllib.parse.urlsplit(self.path).path in HEALTH_PATHS:
                 self.finish_status(200, {"status": "ok"})
             else:
                 self.finish_status(404, {"error": "not_found"})
@@ -155,12 +160,12 @@ def make_handler(service: WakeService):
         def do_POST(self):
             path = urllib.parse.urlsplit(self.path).path
             client = self.client_address[0]
-            if path == "/v1/enroll":
+            if path == ENROLL_PATH:
                 allowed, retry = service.enrollment.allow(client)
                 if not allowed:
                     return self.finish_status(429, {"error": "rate_limited"}, {"Retry-After": str(retry)})
                 return self.handle_enroll()
-            if path != "/v1/wake":
+            if path != WAKE_PATH:
                 return self.finish_status(404, {"error": "not_found"})
             length = int(self.headers.get("Content-Length", "0") or "0")
             if length > 1024:

@@ -9,7 +9,10 @@ import javax.crypto.SecretKey;
 
 final class WakeRequestSigner {
     static final String METHOD = "POST";
-    static final String PATH = "/v1/wake";
+    static final String API_PREFIX = "/api";
+    /** Signed into the HMAC canonical string. Must stay identical to the server and every other client. */
+    static final String PATH = API_PREFIX + "/v1/wake";
+    static final String ENROLL_PATH = API_PREFIX + "/v1/enroll";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     static SignedRequest create(SecretKey key, String target, long timestampSeconds) throws Exception {

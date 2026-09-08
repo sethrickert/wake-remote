@@ -230,7 +230,7 @@ public final class EnrollmentActivity extends Activity {
         status.setText("Enrolling securely…");
         new Thread(() -> {
             try {
-                HttpURLConnection connection = (HttpURLConnection) new URL(server + "/v1/enroll").openConnection();
+                HttpURLConnection connection = (HttpURLConnection) new URL(WakeApiClient.trimTrailingSlash(server) + WakeRequestSigner.ENROLL_PATH).openConnection();
                 connection.setRequestMethod("POST"); connection.setConnectTimeout(8000); connection.setReadTimeout(8000); connection.setDoOutput(true); connection.setRequestProperty("Content-Type", "application/json");
                 try (OutputStream out = connection.getOutputStream()) { out.write(("{\"token\":\"" + token + "\"}").getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
                 if (connection.getResponseCode() != 200) throw new IllegalStateException(connection.getResponseCode() == 401 ? "This enrollment QR is expired or already used." : "Enrollment failed (" + connection.getResponseCode() + ").");

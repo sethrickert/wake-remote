@@ -15,7 +15,7 @@ final class WakeApiClient {
         HttpURLConnection connection = null;
         try {
             WakeRequestSigner.SignedRequest signed = WakeRequestSigner.create(key, target, System.currentTimeMillis() / 1000L);
-            connection = (HttpURLConnection) new URL(serverUrl + "/v1/wake").openConnection();
+            connection = (HttpURLConnection) new URL(trimTrailingSlash(serverUrl) + WakeRequestSigner.PATH).openConnection();
             connection.setRequestMethod("POST");
             connection.setInstanceFollowRedirects(false);
             connection.setConnectTimeout(8_000);
@@ -59,6 +59,13 @@ final class WakeApiClient {
             default:
                 return Result.error("The secure service returned an unexpected response (" + status + ").");
         }
+    }
+
+    /** A stored origin with a trailing slash would produce "//api/v1/wake" and break the signed path. */
+    static String trimTrailingSlash(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        while (trimmed.endsWith("/")) trimmed = trimmed.substring(0, trimmed.length() - 1);
+        return trimmed;
     }
 
     private static int parseRetryAfter(String value) {
