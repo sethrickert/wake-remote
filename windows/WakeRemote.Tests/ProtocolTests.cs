@@ -45,7 +45,10 @@ public class ProtocolTests
     [Fact]
     public void SignedPathIsTheApiPath()
     {
-        Assert.Equal(Vector().GetProperty("path").GetString(), Protocol.WakePath);
-        Assert.Equal(Protocol.WakePath, "/api/v1/wake");
+        // Copied to a local so xUnit2000 does not insist the const be the "expected" arg;
+        // the fixture is the source of truth here, not the client constant.
+        string signed = Protocol.WakePath;
+        Assert.Equal(Vector().GetProperty("path").GetString(), signed);
+        Assert.Equal("/api/v1/wake", signed);
     }
 }
