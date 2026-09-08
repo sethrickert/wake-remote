@@ -5,7 +5,6 @@ import hashlib
 import hmac
 import json
 import logging
-import secrets
 import socket
 import sys
 import threading
@@ -16,6 +15,7 @@ from collections import defaultdict, deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .config import Settings, Target, load_settings
+from .tokens import TokenStore, enrollment_uri
 
 LOG = logging.getLogger("wake-remote")
 
@@ -46,20 +46,14 @@ class WakeService:
         self.authenticated = FixedWindowLimiter(5, 60)
         self.unauthenticated = FixedWindowLimiter(30, 60)
         self.enrollment = FixedWindowLimiter(10, 60)
-        self.tokens: dict[str, float] = {}
-        self.token_lock = threading.Lock()
+        self.tokens = TokenStore(settings.data_dir / "enroll-tokens.json")
 
     def mint_token(self, ttl: int = 600) -> tuple[str, str]:
-        token = secrets.token_urlsafe(32)
-        with self.token_lock:
-            self.tokens[token] = time.time() + ttl
-        payload = "wakeremote://enroll?" + urllib.parse.urlencode({"v": "1", "url": self.settings.server_url, "t": token})
-        return token, payload
+        token = self.tokens.mint(ttl)
+        return token, enrollment_uri(self.settings.server_url, token)
 
     def consume_token(self, token: str) -> bool:
-        with self.token_lock:
-            expires = self.tokens.pop(token, None)
-        return expires is not None and expires >= time.time()
+        return self.tokens.consume(token)
 
     def verify(self, headers, body: bytes) -> tuple[bool, str]:
         key_id = headers.get("X-Key-Id", "")
@@ -75,7 +69,7 @@ class WakeService:
             return False, key_id
         canonical = "\n".join(("POST", "/v1/wake", timestamp, nonce, hashlib.sha256(body).hexdigest()))
         expected = hmac.new(self.settings.secret, canonical.encode(), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected, signature):
+        if not hmac.compare_digest(expected, signature.lower()):
             return False, key_id
         now = time.time()
         with self.nonce_lock:
@@ -94,11 +88,15 @@ class WakeService:
             for _ in range(3):
                 sock.sendto(packet, (target.address, target.port))
 
-    def notify(self, event: str, target: str) -> None:
-        threading.Thread(target=self._notify, args=(event, target), daemon=True).start()
+    def notify(self, event: str, target: str, label: str | None = None) -> None:
+        threading.Thread(target=self._notify, args=(event, target, label or target), daemon=True).start()
 
-    def _notify(self, event: str, target: str) -> None:
-        message = f"Wake Remote: {event} ({target})"
+    def _notify(self, event: str, target: str, label: str) -> None:
+        message = (self.settings.notify_template
+                   .replace("\\n", "\n")
+                   .replace("{event}", event)
+                   .replace("{label}", label)
+                   .replace("{target}", target))
         requests: list[urllib.request.Request] = []
         if self.settings.notify_webhook_url:
             requests.append(urllib.request.Request(self.settings.notify_webhook_url, json.dumps({"event": event, "target": target}).encode(), {"Content-Type": "application/json"}))
@@ -106,7 +104,10 @@ class WakeService:
             requests.append(urllib.request.Request(self.settings.notify_ntfy_url, message.encode(), {"Title": "Wake Remote"}))
         if self.settings.notify_telegram_token and self.settings.notify_telegram_chat_id:
             url = f"https://api.telegram.org/bot{self.settings.notify_telegram_token}/sendMessage"
-            data = urllib.parse.urlencode({"chat_id": self.settings.notify_telegram_chat_id, "text": message}).encode()
+            params = {"chat_id": self.settings.notify_telegram_chat_id, "text": message}
+            if self.settings.notify_telegram_parse_mode:
+                params["parse_mode"] = self.settings.notify_telegram_parse_mode
+            data = urllib.parse.urlencode(params).encode()
             requests.append(urllib.request.Request(url, data))
         for request in requests:
             try:
@@ -185,7 +186,7 @@ def make_handler(service: WakeService):
                 service.send_magic(target)
             except OSError:
                 return self.finish_status(503, {"error": "network_unavailable"})
-            service.notify("wake sent", target.alias)
+            service.notify("wake sent", target.alias, target.label)
             self.finish_status(204)
 
         def handle_enroll(self):

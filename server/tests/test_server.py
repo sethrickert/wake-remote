@@ -68,6 +68,24 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(json.loads(payload)["key"], bytes(range(32)).hex())
         self.assertEqual(self.request("/v1/enroll", body, {"Content-Type": "application/json"})[0], 401)
 
+    def test_uppercase_signature_accepted(self):
+        # Hex is case-insensitive; a client emitting uppercase hex must still authenticate.
+        body, headers = self.signed(nonce="a0112233445566778899aabbccddeeff")
+        headers["X-Signature"] = headers["X-Signature"].upper()
+        with patch.object(WakeService, "send_magic"):
+            self.assertEqual(self.request("/v1/wake", body, headers)[0], 204)
+
+    def test_tokens_persist_across_service_instances(self):
+        # A token minted by one process (e.g. the --enroll CLI) must be redeemable
+        # by a separate server process sharing the same data directory, and minting
+        # a second token must not invalidate the first.
+        token_a, _ = self.service.mint_token()
+        fresh = WakeService(self.settings)
+        token_b, _ = fresh.mint_token()
+        self.assertTrue(fresh.consume_token(token_a))
+        self.assertTrue(self.service.consume_token(token_b))
+        self.assertFalse(self.service.consume_token(token_a))
+
     @patch.object(WakeService, "send_magic", side_effect=OSError("unreachable"))
     def test_packet_failure_is_503(self, send):
         body, headers = self.signed(nonce="f0112233445566778899aabbccddeeff")
