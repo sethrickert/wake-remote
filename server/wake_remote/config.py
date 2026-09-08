@@ -37,6 +37,8 @@ class Settings:
     allowed_origins: tuple[str, ...]
     notify_template: str = "Wake Remote: {event} ({target})"
     notify_telegram_parse_mode: str = ""
+    # Directory holding the built PWA. Empty disables static serving entirely.
+    static_dir: str = ""
 
 
 def _write_private(path: Path, value: str) -> None:
@@ -96,4 +98,5 @@ def load_settings() -> tuple[Settings, bool]:
         allowed_origins=tuple(x.strip() for x in os.environ.get("WAKE_ALLOWED_ORIGINS", "*").split(",") if x.strip()),
         notify_template=os.environ.get("WAKE_NOTIFY_TEMPLATE", "Wake Remote: {event} ({target})"),
         notify_telegram_parse_mode=os.environ.get("WAKE_NOTIFY_TELEGRAM_PARSE_MODE", ""),
+        static_dir=os.environ.get("WAKE_STATIC_DIR", "").strip(),
     ), generated
