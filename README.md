@@ -93,8 +93,10 @@ Two deployment modes are supported:
 
 ### Clients
 
-- **Android**: install `WakeRemote.apk` from a tagged release. If an older build is already
-  installed, uninstall it first.
+- **Android**: install `WakeRemote.apk` from a tagged release. This build is **versionCode
+  2**. Android refuses to install an APK over an existing one with a *higher* versionCode,
+  so if a previous build is already on the device, **uninstall it first** or the install
+  will fail. Uninstalling clears the enrolled key, so re-enroll afterwards.
 - **Windows**: run `WakeRemote-Setup-1.0.2-x64.exe`, or `WakeRemote-Portable.exe` for a
   self-contained build that needs no installation. The portable exe is a single file and runs
   from any folder.
@@ -192,6 +194,10 @@ uptime monitors do not need to know about the prefix.
   drift beyond the 60-second window (enable automatic date and time), a stale enrollment from
   before the `/api` migration, a replayed nonce, or a `WAKE_KEY_ID` mismatch. Verify canonical
   bytes against `shared/test-vectors.json`.
+- **The APK will not install** (`INSTALL_FAILED_VERSION_DOWNGRADE`, or "app not installed"):
+  a build with a higher versionCode is already present. `WakeRemote.apk` is versionCode 2.
+  Uninstall the existing app and install again; the enrolled key is cleared with it, so
+  re-enroll.
 - **`404` on a wake**: the target alias is not configured on the server.
 - **`429`**: wait for `Retry-After`. Do not retry a signed request with the same nonce; sign a
   fresh one.
