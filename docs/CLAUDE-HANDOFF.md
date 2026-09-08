@@ -41,7 +41,7 @@ Run from the repository root.
 ```powershell
 $env:PYTHONPATH = "$PWD\server"
 py -3.13 -m unittest discover -s server\tests
-docker build -t wake-remote-server:3.0.0 server
+docker build -t wake-remote-server:1.0.2 server
 docker compose -f server\docker-compose.yml config
 ```
 
@@ -54,7 +54,7 @@ cd android
 .\gradlew.bat test lint assembleDebug assembleRelease --no-daemon
 ```
 
-Outputs are `app/build/outputs/apk/debug/app-debug.apk` and, without signing variables, `app/build/outputs/apk/release/app-release-unsigned.apk`. Production signing uses `WAKE_STORE_FILE`, `WAKE_STORE_PASSWORD`, `WAKE_KEY_ALIAS`, and `WAKE_KEY_PASSWORD` in the local process or GitHub secrets.
+Outputs are `app/build/outputs/apk/debug/WakeRemote-debug.apk` and `app/build/outputs/apk/release/WakeRemote.apk`; the release build is unsigned unless the signing variables are set. The Gradle config names these directly, so no rename step is needed anywhere. Production signing uses `WAKE_STORE_FILE`, `WAKE_STORE_PASSWORD`, `WAKE_KEY_ALIAS`, and `WAKE_KEY_PASSWORD` in the local process or GitHub secrets.
 
 ### Windows
 
@@ -66,7 +66,7 @@ dotnet publish WakeRemote\WakeRemote.csproj -c Release --no-restore
 & "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" installer.iss
 ```
 
-Outputs are the self-contained portable executable under `WakeRemote/bin/Release/net8.0-windows/win-x64/publish/` and `artifacts/WakeRemote-Setup-3.0.0-x64.exe`. Verify FileVersion/ProductVersion 3.0.0, `Assets/app.ico` on the app, and `Assets/setup.ico` on the installer.
+Outputs are the self-contained portable executable under `WakeRemote/bin/Release/net8.0-windows/win-x64/publish/` (published to the release as `WakeRemote-Portable.exe`) and `artifacts/WakeRemote-Setup-1.0.2-x64.exe`. Verify FileVersion/ProductVersion 1.0.2, `Assets/app.ico` on the app, and `Assets/setup.ico` on the installer.
 
 ### PWA
 
@@ -106,7 +106,7 @@ Use a production-signed APK for distribution. Scan the server QR. Camera permiss
 
 ### Windows
 
-Run `WakeRemote-Setup-3.0.0-x64.exe`, or launch the portable executable. Enrollment metadata may be ordinary JSON, but the key must be DPAPI-protected for the current user. Verify window/taskbar icon, tray Wake action, login option, and `Ctrl+Alt+W` hotkey.
+Run `WakeRemote-Setup-1.0.2-x64.exe`, or launch `WakeRemote-Portable.exe`. Launch it from a folder other than its build directory: assets are embedded, and a working-directory-relative load is exactly the bug that used to prevent any window appearing. Enrollment metadata may be ordinary JSON, but the key must be DPAPI-protected for the current user. Verify window/taskbar icon, tray Wake action, login option, and `Ctrl+Alt+W` hotkey.
 
 ### PWA
 
@@ -157,7 +157,7 @@ Configure these GitHub secrets before tagging:
 - `ANDROID_KEY_ALIAS`
 - `ANDROID_KEY_PASSWORD`
 
-Create `v3.0.0` only after live acceptance passes. Watch `.github/workflows/release.yml`, then download the exact GitHub Release assets and independently verify hashes, APK signature/version, Windows version metadata, both icons, clean installation, and cold launch. A merged commit or green source build is not proof that downloadable assets are correct.
+Create `v1.0.2` only after live acceptance passes. Watch `.github/workflows/release.yml`, then download the exact GitHub Release assets and independently verify hashes, APK signature/version, Windows version metadata, both icons, clean installation, and cold launch. A merged commit or green source build is not proof that downloadable assets are correct.
 
 ## Verified baseline and remaining live checks
 
