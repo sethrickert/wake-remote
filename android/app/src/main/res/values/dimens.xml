@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- One 8dp spacing scale, used everywhere instead of inline magic numbers. -->
+    <dimen name="space_half">4dp</dimen>
+    <dimen name="space_1">8dp</dimen>
+    <dimen name="space_2">16dp</dimen>
+    <dimen name="space_3">24dp</dimen>
+    <dimen name="space_4">32dp</dimen>
+    <dimen name="space_5">40dp</dimen>
+
+    <!-- Fixed header height so controls sit in the same place on every screen. -->
+    <dimen name="header_height">56dp</dimen>
+    <dimen name="touch_target">48dp</dimen>
+    <dimen name="gutter">24dp</dimen>
+    <dimen name="content_max_width">480dp</dimen>
+    <dimen name="logo_size">128dp</dimen>
+    <dimen name="button_height">56dp</dimen>
+    <dimen name="corner_card">16dp</dimen>
+    <dimen name="corner_button">14dp</dimen>
+    <dimen name="status_dot">12dp</dimen>
+</resources>

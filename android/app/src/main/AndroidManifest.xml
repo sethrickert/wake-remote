@@ -17,6 +17,20 @@
         android:usesCleartextTraffic="false">
         <activity
             android:name=".EnrollmentActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <!-- So an enrollment link received outside the camera can still enroll.
+                 Previously the scheme was only ever parsed from scanned QR text, which
+                 meant a wakeremote:// link was useless on the device that received it. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="wakeremote" android:host="enroll" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ManualKeyActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
