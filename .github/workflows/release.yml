@@ -22,20 +22,33 @@ jobs:
       - run: android/gradlew.bat -p android assembleRelease
         env: {WAKE_STORE_FILE: release.jks, WAKE_STORE_PASSWORD: '${{ secrets.ANDROID_STORE_PASSWORD }}', WAKE_KEY_ALIAS: '${{ secrets.ANDROID_KEY_ALIAS }}', WAKE_KEY_PASSWORD: '${{ secrets.ANDROID_KEY_PASSWORD }}'}
 
-      - run: dotnet publish windows/WakeRemote/WakeRemote.csproj -c Release
-
-      # Both executables are intentional and were previously published unlabelled, so
-      # nobody could tell the portable build from the installer. Renamed before the
-      # files: glob so the release page is self-explanatory.
-      - name: Label the portable executable
+      # Explicit -o so the output path is one the workflow controls, and matches the
+      # PublishDir the installer script reads. The previous implicit path baked the TFM
+      # and RID into installer.iss, where a .NET bump would silently break it.
+      - name: Publish the Windows app
         shell: pwsh
         run: |
-          $publish = "windows/WakeRemote/bin/Release/net8.0-windows/win-x64/publish"
-          Move-Item "$publish/WakeRemote.exe" "$publish/WakeRemote-Portable.exe" -Force
+          dotnet publish windows/WakeRemote/WakeRemote.csproj -c Release -o windows/publish
+          if (-not (Test-Path windows/publish/WakeRemote.exe)) {
+            throw "dotnet publish did not produce windows/publish/WakeRemote.exe"
+          }
 
+      # Order matters: the installer reads WakeRemote.exe, so it is built BEFORE the
+      # portable asset is labelled. This step previously ran after a Move-Item that
+      # renamed WakeRemote.exe out from under iscc, which aborted the compile with
+      # "Source file ... does not exist".
       - uses: crazy-max/ghaction-chocolatey@v3
         with: {args: install innosetup --yes}
       - run: iscc windows/installer.iss
+
+      # A copy, not a move, so WakeRemote.exe survives for the installer and this step
+      # cannot break the build again if it is ever reordered.
+      - name: Label the portable executable
+        shell: pwsh
+        run: |
+          Copy-Item windows/publish/WakeRemote.exe windows/publish/WakeRemote-Portable.exe -Force
+          Get-ChildItem windows/publish/WakeRemote-Portable.exe, windows/artifacts/*.exe |
+            Select-Object Name, Length | Format-Table -AutoSize
 
       - uses: actions/setup-node@v4
         with: {node-version: 22}
@@ -68,7 +81,7 @@ jobs:
         with:
           files: |
             android/app/build/outputs/apk/release/WakeRemote.apk
-            windows/WakeRemote/bin/Release/net8.0-windows/win-x64/publish/WakeRemote-Portable.exe
+            windows/publish/WakeRemote-Portable.exe
             windows/artifacts/*.exe
             WakeRemote-PWA.zip
             ${{ env.SERVER_TARBALL }}
