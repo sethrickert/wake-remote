@@ -17,24 +17,61 @@ jobs:
           test -n "$ANDROID_KEYSTORE_BASE64" || { echo "ANDROID_KEYSTORE_BASE64 is not configured" >&2; exit 1; }
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.jks
         env: {ANDROID_KEYSTORE_BASE64: '${{ secrets.ANDROID_KEYSTORE_BASE64 }}'}
+
+      # The Gradle config names this WakeRemote.apk directly, so no rename step.
       - run: android/gradlew.bat -p android assembleRelease
         env: {WAKE_STORE_FILE: release.jks, WAKE_STORE_PASSWORD: '${{ secrets.ANDROID_STORE_PASSWORD }}', WAKE_KEY_ALIAS: '${{ secrets.ANDROID_KEY_ALIAS }}', WAKE_KEY_PASSWORD: '${{ secrets.ANDROID_KEY_PASSWORD }}'}
+
       - run: dotnet publish windows/WakeRemote/WakeRemote.csproj -c Release
+
+      # Both executables are intentional and were previously published unlabelled, so
+      # nobody could tell the portable build from the installer. Renamed before the
+      # files: glob so the release page is self-explanatory.
+      - name: Label the portable executable
+        shell: pwsh
+        run: |
+          $publish = "windows/WakeRemote/bin/Release/net8.0-windows/win-x64/publish"
+          Move-Item "$publish/WakeRemote.exe" "$publish/WakeRemote-Portable.exe" -Force
+
       - uses: crazy-max/ghaction-chocolatey@v3
         with: {args: install innosetup --yes}
       - run: iscc windows/installer.iss
+
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm ci && npm run build
         working-directory: pwa
       - run: Compress-Archive pwa/dist/* WakeRemote-PWA.zip
+        shell: pwsh
+
+      # The server was only ever published as a container image, so there was nothing to
+      # download from the release page. The tarball carries the package, the deploy files
+      # and the built PWA, so WAKE_STATIC_DIR has something to point at.
+      - name: Build the server tarball
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v',''
+          $stage = "wake-remote-server-$version"
+          New-Item -ItemType Directory -Path $stage | Out-Null
+          Copy-Item server/wake_remote      $stage/wake_remote -Recurse
+          # Local __pycache__ has no business in a release artifact.
+          Get-ChildItem $stage -Recurse -Directory -Filter __pycache__ | Remove-Item -Recurse -Force
+          Copy-Item server/Dockerfile       $stage/
+          Copy-Item server/docker-compose.yml $stage/
+          Copy-Item server/requirements.txt $stage/
+          Copy-Item server/SERVER-README.md $stage/
+          Copy-Item pwa/dist                $stage/dist -Recurse
+          tar -czf "$stage.tar.gz" $stage
+          "SERVER_TARBALL=$stage.tar.gz" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - uses: softprops/action-gh-release@v2
         with:
           files: |
-            android/app/build/outputs/apk/release/*.apk
-            windows/WakeRemote/bin/Release/net8.0-windows/win-x64/publish/WakeRemote.exe
+            android/app/build/outputs/apk/release/WakeRemote.apk
+            windows/WakeRemote/bin/Release/net8.0-windows/win-x64/publish/WakeRemote-Portable.exe
             windows/artifacts/*.exe
             WakeRemote-PWA.zip
+            ${{ env.SERVER_TARBALL }}
   server-image:
     runs-on: ubuntu-latest
     steps:

@@ -7,8 +7,14 @@ services:
       WAKE_SERVER_URL: ${WAKE_SERVER_URL:-http://localhost:8080}
       WAKE_ALLOW_INSECURE_ENROLLMENT: ${WAKE_ALLOW_INSECURE_ENROLLMENT:-true}
       WAKE_TARGETS_JSON: ${WAKE_TARGETS_JSON:-}
+      # Set to /srv/pwa to serve the installable PWA at the origin root. Leave empty
+      # and the root returns a JSON 404 instead. The API is under /api either way.
+      WAKE_STATIC_DIR: ${WAKE_STATIC_DIR:-}
     volumes:
       - wake-data:/data
+      # The built PWA (pwa/dist, or the dist/ folder from the server tarball).
+      # Read-only: the container must never be able to rewrite what it serves.
+      - ${WAKE_STATIC_SOURCE:-./pwa-dist}:/srv/pwa:ro
     ports:
       - "${WAKE_LISTEN_ADDRESS:-127.0.0.1}:8080:8080"
     read_only: true

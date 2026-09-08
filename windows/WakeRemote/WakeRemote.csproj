@@ -1,1 +1,41 @@
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><AssemblyName>WakeRemote</AssemblyName><Version>3.0.0</Version><ApplicationIcon>Assets\app.ico</ApplicationIcon><PublishSingleFile>true</PublishSingleFile><SelfContained>true</SelfContained><RuntimeIdentifier>win-x64</RuntimeIdentifier><IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract></PropertyGroup><ItemGroup><None Include="..\..\shared\test-vectors.json" Link="test-vectors.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>WakeRemote</AssemblyName>
+    <Version>1.0.2</Version>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Resource, and deliberately NOT Content.
+
+         Resource embeds the file in the assembly, which is what makes the portable
+         single-file exe genuinely self-contained: Content files are not bundled by
+         PublishSingleFile, they sit loose beside the exe, so an exe downloaded on its
+         own would have no Assets folder to read from.
+
+         Declaring them as Content as well is worse than useless. WPF then emits
+         AssemblyAssociatedContentFile and resolves pack URIs through ContentFilePart,
+         which calls Path.Combine on the assembly location. Under PublishSingleFile that
+         location is empty, so loading the window icon throws ArgumentNullException
+         (Parameter 'path1') from inside InitializeComponent, before any window shows. -->
+    <Resource Include="Assets\app.ico" />
+    <Resource Include="Assets\icon.png" />
+    <Resource Include="Assets\apex-shield.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\shared\test-vectors.json" Link="test-vectors.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

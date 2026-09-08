@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Apex Tech Labs palette. Single source of truth: ApexUi reads these, so a colour
+         is never defined in two places. -->
     <color name="apex_black">#000000</color>
     <color name="apex_background">#0C0C0C</color>
+    <color name="apex_surface_sunken">#181818</color>
+    <color name="apex_surface">#1E1E1E</color>
+    <color name="apex_surface_raised">#262626</color>
+    <color name="apex_border">#262626</color>
+    <color name="apex_muted">#929292</color>
+    <color name="apex_white">#FFFFFF</color>
     <color name="apex_blue">#26A7E1</color>
+    <color name="apex_blue_dark">#0A4965</color>
+    <!-- Not connected / error. "Setup required" is a not-connected state. -->
+    <color name="apex_red">#DC2626</color>
 </resources>

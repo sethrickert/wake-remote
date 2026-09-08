@@ -5,6 +5,8 @@ import hashlib
 import hmac
 import json
 import logging
+import mimetypes
+import os
 import socket
 import sys
 import threading
@@ -18,6 +20,54 @@ from .config import Settings, Target, load_settings
 from .tokens import TokenStore, enrollment_uri
 
 LOG = logging.getLogger("wake-remote")
+
+API_PREFIX = "/api"
+WAKE_PATH = f"{API_PREFIX}/v1/wake"
+ENROLL_PATH = f"{API_PREFIX}/v1/enroll"
+HEALTH_PATHS = ("/healthz", f"{API_PREFIX}/healthz")
+
+# Explicit types rather than trusting the host's mimetypes registry, which on some
+# platforms maps .js to text/plain and would break module scripts.
+STATIC_TYPES = {
+    ".css": "text/css; charset=utf-8",
+    ".html": "text/html; charset=utf-8",
+    ".ico": "image/x-icon",
+    ".js": "text/javascript; charset=utf-8",
+    ".json": "application/json",
+    ".map": "application/json",
+    ".mjs": "text/javascript; charset=utf-8",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".txt": "text/plain; charset=utf-8",
+    ".webmanifest": "application/manifest+json",
+    ".webp": "image/webp",
+    ".woff2": "font/woff2",
+}
+
+
+def resolve_static(root: str, url_path: str) -> str | None:
+    """Map a URL path to a real file inside root, or None.
+
+    Fails closed on traversal: the candidate is fully resolved (following symlinks)
+    and must still be contained by the resolved root. Note urlsplit() does not decode
+    percent-escapes, so %2e%2e%2f arrives encoded and must be unquoted before the
+    containment check rather than after.
+    """
+    if not root:
+        return None
+    try:
+        root_real = os.path.realpath(root)
+        relative = urllib.parse.unquote(url_path).lstrip("/")
+        if "\x00" in relative:
+            return None
+        candidate = os.path.realpath(os.path.join(root_real, relative))
+    except (OSError, ValueError):
+        return None
+    if candidate != root_real and not candidate.startswith(root_real + os.sep):
+        return None
+    if os.path.isdir(candidate):
+        candidate = os.path.join(candidate, "index.html")
+    return candidate if os.path.isfile(candidate) else None
 
 
 class FixedWindowLimiter:
@@ -67,7 +117,7 @@ class WakeService:
                 return False, key_id
         except ValueError:
             return False, key_id
-        canonical = "\n".join(("POST", "/v1/wake", timestamp, nonce, hashlib.sha256(body).hexdigest()))
+        canonical = "\n".join(("POST", WAKE_PATH, timestamp, nonce, hashlib.sha256(body).hexdigest()))
         expected = hmac.new(self.settings.secret, canonical.encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, signature.lower()):
             return False, key_id
@@ -118,7 +168,7 @@ class WakeService:
 
 def make_handler(service: WakeService):
     class Handler(BaseHTTPRequestHandler):
-        server_version = "WakeRemote/3"
+        server_version = "WakeRemote/1"
 
         def log_message(self, _format, *args):
             return
@@ -143,24 +193,63 @@ def make_handler(service: WakeService):
         def do_OPTIONS(self):
             self.finish_status(204, headers={"Access-Control-Allow-Methods": "POST, GET, HEAD, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, X-Key-Id, X-Timestamp, X-Nonce, X-Signature", "Access-Control-Max-Age": "600"})
 
+        def finish_file(self, path: str, cache: str, include_body: bool = True):
+            try:
+                with open(path, "rb") as handle:
+                    data = handle.read()
+            except OSError:
+                return self.finish_status(404, {"error": "not_found"}, include_body=include_body)
+            suffix = os.path.splitext(path)[1].lower()
+            ctype = STATIC_TYPES.get(suffix) or mimetypes.guess_type(path)[0] or "application/octet-stream"
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", cache)
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            if include_body:
+                self.wfile.write(data)
+            LOG.info("request", extra={"method": self.command, "path": urllib.parse.urlsplit(self.path).path, "status": 200})
+
+        def serve_get(self, include_body: bool = True):
+            path = urllib.parse.urlsplit(self.path).path
+            if path in HEALTH_PATHS:
+                return self.finish_status(200, {"status": "ok"}, include_body=include_body)
+            # Decided before the SPA fallback so a mistyped API call never silently
+            # returns index.html to a client expecting JSON.
+            if path == API_PREFIX or path.startswith(API_PREFIX + "/"):
+                return self.finish_status(404, {"error": "not_found"}, include_body=include_body)
+            root = service.settings.static_dir
+            if not root:
+                return self.finish_status(404, {"error": "not_found"}, include_body=include_body)
+            target = resolve_static(root, path)
+            if target is not None:
+                # Vite emits content-hashed filenames under /assets, so those are immutable.
+                immutable = path.startswith("/assets/") and os.path.basename(target) != "index.html"
+                cache = "public, max-age=31536000, immutable" if immutable else "public, max-age=3600"
+                if os.path.basename(target) == "index.html":
+                    cache = "no-cache"
+                return self.finish_file(target, cache, include_body)
+            fallback = resolve_static(root, "/index.html")
+            if fallback is None:
+                return self.finish_status(404, {"error": "not_found"}, include_body=include_body)
+            return self.finish_file(fallback, "no-cache", include_body)
+
         def do_HEAD(self):
-            self.finish_status(200 if urllib.parse.urlsplit(self.path).path == "/healthz" else 404, include_body=False)
+            self.serve_get(include_body=False)
 
         def do_GET(self):
-            if urllib.parse.urlsplit(self.path).path == "/healthz":
-                self.finish_status(200, {"status": "ok"})
-            else:
-                self.finish_status(404, {"error": "not_found"})
+            self.serve_get(include_body=True)
 
         def do_POST(self):
             path = urllib.parse.urlsplit(self.path).path
             client = self.client_address[0]
-            if path == "/v1/enroll":
+            if path == ENROLL_PATH:
                 allowed, retry = service.enrollment.allow(client)
                 if not allowed:
                     return self.finish_status(429, {"error": "rate_limited"}, {"Retry-After": str(retry)})
                 return self.handle_enroll()
-            if path != "/v1/wake":
+            if path != WAKE_PATH:
                 return self.finish_status(404, {"error": "not_found"})
             length = int(self.headers.get("Content-Length", "0") or "0")
             if length > 1024:

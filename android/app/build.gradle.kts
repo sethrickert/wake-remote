@@ -10,8 +10,8 @@ android {
         applicationId = "com.apextechlabs.wakeremote"
         minSdk = 23
         targetSdk = 34
-        versionCode = 3
-        versionName = "3.0.0"
+        versionCode = 2
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -39,6 +39,15 @@ android {
         }
     }
 
+    // The release asset is WakeRemote.apk. Setting it here means the artifact is
+    // correctly named at the source rather than renamed in CI.
+    applicationVariants.all {
+        outputs.all {
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl)
+                .outputFileName = if (buildType.name == "release") "WakeRemote.apk" else "WakeRemote-debug.apk"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -47,5 +56,10 @@ android {
 
 dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    // zxing's CaptureManager calls ContextCompat/ActivityCompat directly. Without this the
+    // scanner activity dies on resume with NoClassDefFoundError for
+    // androidx.core.content.ContextCompat, which looks exactly like the QR button doing
+    // nothing and returning to the previous screen.
+    implementation("androidx.core:core:1.13.1")
     testImplementation("junit:junit:4.13.2")
 }

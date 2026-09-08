@@ -1,17 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">WakeRemote</string>
-    <string name="apex_logo_description">Apex Wake-on-LAN logo</string>
-    <string name="open_secure_setup">Open secure key setup</string>
-    <string name="wake_computer">WAKE MAIN PC</string>
-    <string name="wake_computer_description">Send a secure wake signal to the main PC</string>
-    <string name="setup_button">SETUP  ⚙</string>
-    <string name="sending">SENDING…</string>
-    <string name="setup_secure_key">SET UP SECURE KEY</string>
-    <string name="try_again_in">TRY AGAIN IN %1$ds</string>
-    <string name="key_installed">Secure key installed. WakeRemote is ready.</string>
+    <string name="app_name">Wake Remote</string>
+
+    <!-- Header -->
+    <string name="back">Back</string>
+    <string name="settings">Settings</string>
+    <string name="app_logo">Wake Remote logo</string>
+    <string name="attribution">Apex Tech Labs</string>
+
+    <!-- Home -->
+    <string name="home_eyebrow">REMOTE POWER</string>
+    <string name="home_title">Wake your PC</string>
+    <string name="home_subtitle">Securely send a wake signal from anywhere.</string>
+    <string name="wake_computer">Wake computer</string>
+    <string name="wake_computer_description">Send a secure wake signal</string>
+    <string name="setup_secure_key">Set up secure key</string>
+    <string name="sending">Sending…</string>
+    <string name="try_again_in">Try again in %1$ds</string>
+
+    <!-- Status -->
+    <string name="status_ready">Ready</string>
+    <string name="status_ready_detail">Secure key installed.</string>
+    <string name="status_setup_required">Setup required</string>
+    <string name="status_setup_detail">Install the server key once to continue.</string>
+    <string name="status_signing">Signing request</string>
+    <string name="status_signing_detail">Creating a fresh, secure wake command…</string>
+    <string name="status_sent">Wake signal sent</string>
+    <string name="status_waiting">Please wait</string>
+    <string name="status_offline">Connection unavailable</string>
+    <string name="status_failed">Request not sent</string>
+
+    <!-- Enrollment -->
+    <string name="enroll_eyebrow">SECURE ENROLLMENT</string>
+    <!-- Must wrap between the two words, never mid-word, and never "WakeRemote". -->
+    <string name="enroll_title">Connect Wake\u00A0Remote</string>
+    <string name="enroll_subtitle">Scan the single-use QR shown during server setup.</string>
+    <string name="scan_qr">Scan QR code</string>
+    <string name="enter_key_manually">Enter key manually</string>
+    <string name="enrolling">Enrolling securely…</string>
+    <string name="enroll_complete">Enrollment complete.</string>
+    <string name="enroll_invalid_qr">This is not a valid Wake Remote enrollment QR.</string>
+    <string name="enroll_invalid_link">Enrollment requires a valid version 1 HTTPS link.</string>
+    <string name="not_enrolled">Not enrolled</string>
+    <string name="service_label">Service: %1$s</string>
+    <string name="target_label">Target: %1$s</string>
+
+    <!-- Camera permission -->
+    <string name="camera_rationale_title">Camera access</string>
+    <string name="camera_rationale">Wake Remote uses the camera only to read the enrollment QR code. Nothing is recorded or uploaded.</string>
+    <string name="camera_denied">Camera access is off, so the QR scanner cannot open. Enter the key manually, or allow the camera in Settings.</string>
+    <string name="open_settings">Open settings</string>
+    <string name="not_now">Not now</string>
+    <string name="no_camera">This device has no camera. Enter the key manually instead.</string>
+
+    <!-- Manual key -->
+    <string name="manual_title">Enter key manually</string>
+    <string name="manual_subtitle">Paste the 64-character key created during server setup. It is stored in Android\u2019s protected key store and never displayed again.</string>
+    <string name="hmac_key">HMAC KEY</string>
+    <string name="key_hint">64 hexadecimal characters</string>
+    <string name="save_secure_key">Save secure key</string>
+    <string name="remove_installed_key">Remove installed key</string>
+    <string name="remove_key_title">Remove secure key?</string>
+    <string name="remove_key_message">Wake Remote will be unable to send requests until a key is enrolled again.</string>
+    <string name="remove">Remove</string>
+    <string name="cancel">Cancel</string>
+    <string name="server_url_label">SERVER URL</string>
+    <string name="server_url_hint">https://wol.example.com</string>
+
+    <!-- Key store results -->
+    <string name="key_installed">Secure key installed. Wake Remote is ready.</string>
     <string name="key_protection_failed">Android could not protect the key on this device.</string>
     <string name="key_removed">The secure key was removed.</string>
     <string name="key_removal_failed">The secure key could not be removed.</string>
     <string name="key_status_unavailable">Secure key status is unavailable.</string>
+    <string name="no_key_installed">No secure key is installed yet.</string>
 </resources>

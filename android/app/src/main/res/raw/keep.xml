@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Belt and braces for the zxing capture UI, which is reached through the library's own
+     manifest entry rather than from our code. Verified that a release build keeps these
+     even without this file (shrinkMode defaults to "safe"), so this guards against a
+     future change rather than repairing a reproduced failure. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@layout/zxing_*,@id/zxing_*,@string/zxing_*,@style/zxing_*,@color/zxing_*,@drawable/zxing_*"
+    tools:shrinkMode="safe" />

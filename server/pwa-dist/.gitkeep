@@ -1,0 +1,6 @@
+Mount point for the built PWA.
+
+Copy the contents of pwa/dist (or the dist/ folder from the release tarball)
+here, then set WAKE_STATIC_DIR=/srv/pwa so the server serves the app at the
+origin root. Leaving this empty is fine: the API under /api works either way,
+and the root simply returns a JSON 404.

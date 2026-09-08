@@ -4,7 +4,7 @@ WakeRemote is a focused Android client for the Apex Wake-on-LAN service. The eve
 
 ## Install and enroll
 
-1. Copy `WakeRemote-2.0.0-debug.apk` to an Android 6.0 or newer device and open it.
+1. Copy `WakeRemote.apk` to an Android 6.0 or newer device and open it.
 2. If Android asks, allow the file-opening app to install unknown apps.
 3. On the one-time **Secure enrollment** screen, paste the 64-character hexadecimal HMAC key created during the VPS setup.
 4. Tap **Save secure key**. The key is imported into Android Keystore and cannot be read back through the app.
@@ -12,7 +12,7 @@ WakeRemote is a focused Android client for the Apex Wake-on-LAN service. The eve
 
 The endpoint and target are intentionally fixed:
 
-- `POST https://wol.apextechlabs.com/v1/wake`
+- `POST https://wol.apextechlabs.com/api/v1/wake`
 - `{"target":"main-pc"}`
 
 Open **Setup** to replace or remove the installed key. WakeRemote never downloads a key from the server and does not contain one in its source code or APK.
