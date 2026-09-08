@@ -129,7 +129,7 @@ public final class MainActivity extends Activity {
     private FrameLayout buildHero() {
         FrameLayout hero = new FrameLayout(this);
         ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.apex_wol_logo);
+        logo.setImageResource(R.drawable.wake_remote_logo);
         logo.setContentDescription(getString(R.string.apex_logo_description));
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
         logo.setAdjustViewBounds(true);

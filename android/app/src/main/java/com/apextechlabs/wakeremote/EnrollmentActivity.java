@@ -63,7 +63,7 @@ public final class EnrollmentActivity extends Activity {
         page.addView(back, backParams);
 
         ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.apex_wol_logo);
+        logo.setImageResource(R.drawable.wake_remote_logo);
         logo.setContentDescription(getString(R.string.apex_logo_description));
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
         LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(dp(116), dp(116));
