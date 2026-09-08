@@ -168,7 +168,7 @@ class WakeService:
 
 def make_handler(service: WakeService):
     class Handler(BaseHTTPRequestHandler):
-        server_version = "WakeRemote/3"
+        server_version = "WakeRemote/1"
 
         def log_message(self, _format, *args):
             return
